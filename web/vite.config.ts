@@ -17,6 +17,8 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  // GitHub Pages: https://sayoon01.github.io/MyWorkOS/
+  base: process.env.GITHUB_PAGES === 'true' ? '/MyWorkOS/' : '/',
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if
