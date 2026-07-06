@@ -14,7 +14,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from agents.root_agent.agent import root_agent
-from agents.root_agent.common import sanitize_user_response
+from agents.root_agent.common import _looks_like_leaked_reasoning, sanitize_user_response
 from agents.root_agent.sub_agents.book_agent.agent import book_agent
 from agents.root_agent.sub_agents.data_agent.agent import data_agent
 from agents.root_agent.sub_agents.document_agent.agent import document_agent
@@ -37,25 +37,24 @@ CASES = [
     ("어제 회의록 초안 써줘", "document_agent"),
     ("이 CSV 요약해줘", "data_agent"),
     ("보고서 목차 하나 짜줘", "book_agent"),
+    ("어제 얘기한 회의 다시 확인해줘", "schedule_agent"),
 ]
-
-
-def _has_leaked_reasoning(text: str) -> bool:
-  return sanitize_user_response(text) != text
 
 
 async def run_case(
     runner: Runner,
     session_service: InMemorySessionService,
+    index: int,
     text: str,
     expected_agent: str,
 ) -> tuple[bool, bool]:
-  user_id = "smoke-test"
-  session_id = f"smoke-{expected_agent}"
+  user_id = "smoke-user"
+  session_id = f"smoke-{index}-{expected_agent}"
   await session_service.create_session(
       app_name=APP_NAME,
       user_id=user_id,
       session_id=session_id,
+      state={"user_id": user_id},
   )
   content = types.Content(role="user", parts=[types.Part(text=text)])
 
@@ -76,14 +75,15 @@ async def run_case(
       final_text = event.content.parts[0].text or ""
 
   route_ok = routed_to == expected_agent
-  clean_ok = not _has_leaked_reasoning(final_text)
+  leaked = _looks_like_leaked_reasoning(final_text)
+  clean_ok = not leaked
   display_text = sanitize_user_response(final_text)
 
   print(f"\n[{text}]")
   print(f"  기대: {expected_agent}")
   print(f"  라우팅: {'✅' if route_ok else '❌'} (got {routed_to})")
   print(f"  도구호출: {tools_called}")
-  print(f"  응답품질: {'✅' if clean_ok else '❌ 영어 추론 노출'}")
+  print(f"  응답품질: {'❌ 영어 추론 노출' if leaked else '✅'}")
   print(f"  응답: {display_text[:120]}")
 
   return route_ok, clean_ok
@@ -97,8 +97,8 @@ async def main() -> int:
   runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=session_service)
 
   route_pass = clean_pass = 0
-  for text, expected in CASES:
-    route_ok, clean_ok = await run_case(runner, session_service, text, expected)
+  for i, (text, expected) in enumerate(CASES):
+    route_ok, clean_ok = await run_case(runner, session_service, i, text, expected)
     route_pass += int(route_ok)
     clean_pass += int(clean_ok)
 

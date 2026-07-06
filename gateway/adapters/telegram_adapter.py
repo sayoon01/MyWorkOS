@@ -37,6 +37,7 @@ async def _ensure_session(user_id: str, session_id: str) -> None:
         app_name=APP_NAME,
         user_id=user_id,
         session_id=session_id,
+        state={"user_id": user_id},
     )
 
 

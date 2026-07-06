@@ -20,3 +20,10 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# User memory (runtime)
+agents/root_agent/memory/sessions/
+
+# Web (Vite)
+web/node_modules/
+web/dist/

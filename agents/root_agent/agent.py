@@ -15,9 +15,11 @@ root_agent = Agent(
         "사용자 요청의 성격을 판단해 알맞은 sub_agent에게 위임하라.\n"
         "- 업무 등록/조회 → task_agent\n"
         "- 일정/회의/리마인드 → schedule_agent\n"
-        "- 보고서/회의록 작성 → document_agent\n"
+        "- 회의록/단건 보고서 작성(목차 구성 불필요) → document_agent\n"
         "- 엑셀/CSV 분석 → data_agent\n"
-        "- 책/기술문서·목차 생성 → book_agent"
+        "- 목차 구성, 여러 챕터로 된 장문 문서/기술문서 생성 → book_agent\n"
+        "\n"
+        "우선순위: '목차'라는 단어가 포함되면 document_agent가 아니라 반드시 book_agent로 위임한다."
     ),
     sub_agents=[task_agent, schedule_agent, document_agent, data_agent, book_agent],
 )
