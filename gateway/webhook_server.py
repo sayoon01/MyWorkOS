@@ -2,12 +2,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import asyncio
 import os
 
-from .auth import load_channels_config, get_token
-from .adapters.telegram_adapter import run_telegram_bot
-# from .adapters.slack_adapter import run_slack_bot   # 보류
-# from .adapters.teams_adapter import run_teams_bot    # 보류
+from .auth import get_token, load_channels_config
+from .adapters.telegram_adapter import run_gateway
+from .adapters.web_adapter import run_web_server
 
 
 def _agent_debug_enabled() -> bool:
@@ -18,8 +18,14 @@ def _heartbeat_enabled() -> bool:
     return os.environ.get("HEARTBEAT_ENABLED", "1").lower() in ("1", "true", "yes")
 
 
-def main():
+async def main_async() -> None:
     channels = load_channels_config()
+    tasks: list[asyncio.Task] = []
+
+    if channels.get("web", {}).get("enabled"):
+        port = int(channels["web"].get("port", os.environ.get("WEBHOOK_PORT", 8080)))
+        print(f"[gateway] Web 채널 기동 (port={port})", flush=True)
+        tasks.append(asyncio.create_task(run_web_server(port)))
 
     if channels.get("telegram", {}).get("enabled"):
         token = get_token(channels["telegram"])
@@ -32,13 +38,21 @@ def main():
             print("[gateway] Heartbeat + Telegram 통합 모드", flush=True)
         if _agent_debug_enabled():
             print(
-                "[gateway] AGENT_DEBUG=on — Telegram 메시지마다 "
+                "[gateway] AGENT_DEBUG=on — 메시지마다 "
                 "[agent]/[transfer]/[tool] 로그가 이 터미널에 출력됩니다.",
                 flush=True,
             )
-        run_telegram_bot(token, heartbeat_user_id=heartbeat_user_id)
+        tasks.append(asyncio.create_task(run_gateway(token, heartbeat_user_id=heartbeat_user_id)))
 
-    # Phase 2에서 슬랙/팀즈 켤 때 asyncio.gather로 동시 기동하도록 변경 예정
+    if not tasks:
+        raise SystemExit("channels.yaml에 enabled 채널이 없습니다.")
+
+    await asyncio.gather(*tasks)
+
+
+def main() -> None:
+    asyncio.run(main_async())
+
 
 if __name__ == "__main__":
     main()

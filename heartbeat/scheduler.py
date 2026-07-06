@@ -9,62 +9,25 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-from google.genai import types
-
-from agents.root_agent.agent import root_agent
-from agents.root_agent.common import sanitize_user_response
 
 load_dotenv()
 
 KST = ZoneInfo("Asia/Seoul")
-APP_NAME = "agentic_runtime"
 UPLOAD_DIR = Path(os.environ.get("HEARTBEAT_UPLOAD_DIR", "data/uploads"))
 CHECK_INTERVAL_SEC = int(os.environ.get("HEARTBEAT_CHECK_INTERVAL_SEC", "300"))
 
 _seen_files: set[str] = set()
 
-session_service = InMemorySessionService()
-runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=session_service)
-
-
-async def _ensure_session(user_id: str, session_id: str) -> None:
-  session = await session_service.get_session(
-      app_name=APP_NAME,
-      user_id=user_id,
-      session_id=session_id,
-  )
-  if session is None:
-    await session_service.create_session(
-        app_name=APP_NAME,
-        user_id=user_id,
-        session_id=session_id,
-        state={"user_id": user_id},
-    )
-
 
 async def notify_via_bot(user_id: str, text: str) -> str:
   """heartbeat가 감지한 걸 에이전트에게 대신 물어보게 하는 헬퍼."""
   from gateway.adapters.telegram_adapter import push_message
+  from gateway.runtime import run_agent_chat
 
   session_id = f"heartbeat-{user_id}"
-  await _ensure_session(user_id, session_id)
-
-  content = types.Content(role="user", parts=[types.Part(text=text)])
-  final_text = ""
-  async for event in runner.run_async(
-      user_id=user_id,
-      session_id=session_id,
-      new_message=content,
-  ):
-    if event.is_final_response() and event.content and event.content.parts:
-      final_text = event.content.parts[0].text or ""
-
-  if final_text:
-    final_text = sanitize_user_response(final_text)
+  final_text = await run_agent_chat(user_id, session_id, text, channel="heartbeat")
   print(f"[heartbeat] {final_text}", flush=True)
-  await push_message(chat_id=user_id, text=final_text or "응답을 생성하지 못했습니다.")
+  await push_message(chat_id=user_id, text=final_text)
   return final_text
 
 

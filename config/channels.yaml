@@ -2,6 +2,9 @@ channels:
   telegram:
     enabled: true
     token_env: TELEGRAM_BOT_TOKEN
+  web:
+    enabled: true
+    port: 8080
   slack:
     enabled: false
   teams:
