@@ -24,6 +24,5 @@ Thumbs.db
 # User memory (runtime)
 agents/root_agent/memory/sessions/
 
-# Web (Vite)
-web/node_modules/
-web/dist/
+# Web dashboard (local only, not in repo)
+web/
