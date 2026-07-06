@@ -24,5 +24,6 @@ Thumbs.db
 # User memory (runtime)
 agents/root_agent/memory/sessions/
 
-# Web dashboard (local only, not in repo)
-web/
+# Web (Vite) — 소스만 추적, 빌드/의존성 제외
+web/node_modules/
+web/dist/

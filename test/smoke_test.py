@@ -38,6 +38,7 @@ CASES = [
     ("이 CSV 요약해줘", "data_agent"),
     ("보고서 목차 하나 짜줘", "book_agent"),
     ("어제 얘기한 회의 다시 확인해줘", "schedule_agent"),
+    ("다음부터 회의는 항상 오후 2시 이후로만 잡아줘", "schedule_agent"),
 ]
 
 
