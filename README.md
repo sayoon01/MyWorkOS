@@ -27,37 +27,6 @@ HeartbeatScheduler (cron)
   → 변경 있으면 Runner.run_async(root_agent, ...)   # TODO
 ```
 
-### 디렉터리 구조
-
-```
-keti-workOS/
-├── agents/                    # Google ADK 에이전트 (`adk create` 규칙)
-│   └── root_agent/
-│       ├── agent.py           # root_agent — 라우팅·위임
-│       ├── common.py          # MODEL, 메모리 도구, 응답 정제, SOUL 로더
-│       ├── memory/            # 세션별 장기 기억 (.md) + InMemoryMemoryService
-│       └── sub_agents/
-│           ├── task_agent/    # 업무 등록·조회·상태 변경
-│           ├── schedule_agent/# 일정·회의·리마인드
-│           ├── document_agent/# 회의록·단건 보고서
-│           ├── data_agent/    # CSV/엑셀 분석
-│           └── book_agent/    # 목차·장문 문서 (textbook/guidebook/report/story/general)
-├── gateway/                   # ADK 밖 — 채널 어댑터
-│   ├── webhook_server.py      # 진입점 — channels.yaml 기반 채널 기동
-│   ├── auth.py                # 채널 설정·토큰 로드
-│   └── adapters/
-│       ├── telegram_adapter.py
-│       ├── slack_adapter.py   # 보류
-│       └── teams_adapter.py   # 보류
-├── job_queue/                 # Redis 작업 큐 + 분산락
-├── heartbeat/                 # cron 기반 능동 트리거 + 변경 감지
-├── config/
-│   └── channels.yaml          # 채널 on/off
-├── web/                       # React 대시보드 (Vite)
-├── test/                      # smoke_test 등
-└── scripts/
-    └── web-serve.sh           # 대시보드 백그라운드 서빙 (systemd)
-```
 
 ### 에이전트 라우팅
 
