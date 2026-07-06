@@ -1,0 +1,8 @@
+channels:
+  telegram:
+    enabled: true
+    token_env: TELEGRAM_BOT_TOKEN
+  slack:
+    enabled: false
+  teams:
+    enabled: false
