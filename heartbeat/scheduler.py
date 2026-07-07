@@ -24,7 +24,7 @@ async def notify_via_bot(user_id: str, text: str) -> str:
   from gateway.adapters.telegram_adapter import push_message
   from gateway.runtime import run_agent_chat
 
-  session_id = f"heartbeat-{user_id}"
+  session_id = f"user-{user_id}"
   final_text = await run_agent_chat(user_id, session_id, text, channel="heartbeat")
   print(f"[heartbeat] {final_text}", flush=True)
   await push_message(chat_id=user_id, text=final_text)

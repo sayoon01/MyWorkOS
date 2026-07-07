@@ -15,30 +15,22 @@ from google.genai import types
 
 from agents.root_agent.agent import root_agent
 from agents.root_agent.common import _looks_like_leaked_reasoning, sanitize_user_response
-from agents.root_agent.sub_agents.book_agent.agent import book_agent
-from agents.root_agent.sub_agents.data_agent.agent import data_agent
-from agents.root_agent.sub_agents.document_agent.agent import document_agent
-from agents.root_agent.sub_agents.schedule_agent.agent import schedule_agent
-from agents.root_agent.sub_agents.task_agent.agent import task_agent
 
 APP_NAME = "agentic_runtime"
 
-SUB_AGENTS = {
-    "task_agent": task_agent,
-    "schedule_agent": schedule_agent,
-    "document_agent": document_agent,
-    "data_agent": data_agent,
-    "book_agent": book_agent,
-}
-
 CASES = [
-    ("내일 오후 3시 회의 잡아줘", "schedule_agent"),
+    #("내일 오후 3시 회의 잡아줘", "schedule_agent"),
     ("이번 주 업무 목록 보여줘", "task_agent"),
     ("어제 회의록 초안 써줘", "document_agent"),
     ("이 CSV 요약해줘", "data_agent"),
     ("보고서 목차 하나 짜줘", "book_agent"),
     ("어제 얘기한 회의 다시 확인해줘", "schedule_agent"),
     ("다음부터 회의는 항상 오후 2시 이후로만 잡아줘", "schedule_agent"),
+    (
+    "오늘 회의 메모야: 상아가 데이터 분석 리포트 다음주 금요일까지 작성, "
+    "민수가 API 문서 이번주 안에 정리. 이거 회의록으로 정리하고 할 일로 등록해줘",
+    "meeting_action_pipeline"
+)
 ]
 
 
@@ -92,7 +84,7 @@ async def run_case(
 
 async def main() -> int:
   print("=== KETI WorkOS smoke test ===")
-  print(f"root_agent sub_agents: {list(SUB_AGENTS.keys())}")
+  print("root_agent sub_agents:", [a.name for a in root_agent.sub_agents])
 
   session_service = InMemorySessionService()
   runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=session_service)

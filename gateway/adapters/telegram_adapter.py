@@ -43,7 +43,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return
 
   user_id = str(update.effective_user.id)
-  session_id = f"tg-{user_id}"
+  session_id = f"user-{user_id}"
   final_text = await run_agent_chat(
       user_id,
       session_id,
