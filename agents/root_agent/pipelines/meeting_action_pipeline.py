@@ -1,7 +1,7 @@
 from google.adk.agents import LlmAgent, SequentialAgent
 from ..common import MODEL, strip_leaked_reasoning, get_current_time
 from ..sub_agents.document_agent.tools import draft_meeting_minutes
-from ..sub_agents.task_agent.tools import create_task
+from ..sub_agents.task_agent.tools import create_tasks_bulk
 
 # ── Step 1: 이해/요약 — 원본 메모를 회의록으로 정리 ──
 minutes_writer = LlmAgent(
@@ -35,13 +35,14 @@ action_extractor = LlmAgent(
 task_registrar = LlmAgent(
     model=MODEL,
     name="task_registrar",
-    description="추출된 액션아이템을 실제 업무로 등록한다.",
+    description="추출된 액션아이템을 실제 업무로 일괄 등록한다.",
     instruction=(
-        "다음 액션아이템 목록을 각각 create_task로 등록하라:\n{action_items}\n\n"
-        "'추출된 액션아이템 없음'이면 아무것도 등록하지 않고 그대로 안내한다.\n"
-        "등록이 끝나면 몇 건이 등록됐는지 한국어로 1~2문장으로 알려준다."
+        "다음 액션아이템 목록을 파싱해서 create_tasks_bulk를 **정확히 1번만** 호출하라:\n"
+        "{action_items}\n\n"
+        "'추출된 액션아이템 없음'이면 도구를 호출하지 않고 그대로 안내한다.\n"
+        "등록이 끝나면 몇 건이 등록됐는지 한국어로 알려준다."
     ),
-    tools=[get_current_time, create_task],
+    tools=[get_current_time, create_tasks_bulk],
     output_key="registration_result",
     after_model_callback=strip_leaked_reasoning,
 )

@@ -1,3 +1,6 @@
+from gateway.adapters.notion_adapter import create_calendar_event_notion
+
+
 def create_event(
     title: str,
     start_time: str,

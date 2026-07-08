@@ -10,7 +10,7 @@ from ...common import (
     save_memory,
     strip_leaked_reasoning,
 )
-from .tools import create_event, list_events, set_reminder
+from .tools import create_calendar_event_notion, create_event, list_events, set_reminder
 
 schedule_agent = Agent(
     model=MODEL,
@@ -24,6 +24,7 @@ schedule_agent = Agent(
         create_event,
         list_events,
         set_reminder,
+        create_calendar_event_notion,
     ],
     after_model_callback=strip_leaked_reasoning,
 )

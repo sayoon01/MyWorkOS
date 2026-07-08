@@ -15,7 +15,7 @@ from google.genai import types
 
 KST = ZoneInfo("Asia/Seoul")
 
-MODEL = LiteLlm(model="ollama_chat/gemma4:31b", think=False)
+MODEL = LiteLlm(model="ollama_chat/gemma4-31b-32k")
 
 RESPONSE_RULES = """
 # 응답 규칙 (공통)
@@ -134,3 +134,48 @@ def get_current_time() -> dict:
       "tomorrow": (now + timedelta(days=1)).strftime("%Y-%m-%d"),
       "timezone": "Asia/Seoul",
   }
+
+
+def read_document(file_path: str) -> dict:
+  """PDF·HWP·HWPX·Excel·CSV·텍스트 파일을 읽어 내용을 반환한다."""
+  path = Path(file_path)
+  if not path.exists():
+    return {"error": f"파일을 찾을 수 없습니다: {file_path}"}
+
+  ext = path.suffix.lower()
+  try:
+    if ext == ".pdf":
+      from pypdf import PdfReader
+
+      reader = PdfReader(str(path))
+      text = "\n".join(page.extract_text() or "" for page in reader.pages)
+
+    elif ext in (".hwp", ".hwpx"):
+      from hwp_hwpx_parser import extract_hwp5, extract_hwpx
+
+      text = extract_hwp5(str(path)) if ext == ".hwp" else extract_hwpx(str(path))
+
+    elif ext in (".xlsx", ".xls"):
+      import openpyxl
+
+      wb = openpyxl.load_workbook(path, data_only=True)
+      parts = []
+      for sheet in wb.worksheets:
+        parts.append(f"[시트: {sheet.title}]")
+        for row in sheet.iter_rows(values_only=True, max_row=200):
+          parts.append(" | ".join(str(c) if c is not None else "" for c in row))
+      text = "\n".join(parts)
+
+    elif ext == ".csv":
+      import pandas as pd
+
+      df = pd.read_csv(path)
+      text = df.to_string(max_rows=200)
+
+    else:  # txt, md 등
+      text = path.read_text(encoding="utf-8", errors="ignore")
+
+  except Exception as e:
+    return {"error": f"파일 읽기 실패 ({ext}): {e}"}
+
+  return {"file_path": file_path, "content": text[:20000], "length": len(text)}

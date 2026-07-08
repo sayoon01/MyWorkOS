@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from pathlib import Path
 
 import httpx
 from telegram import Update
@@ -15,6 +16,8 @@ from gateway.runtime import run_agent_chat
 logger = logging.getLogger(__name__)
 
 _bot_app: Application | None = None
+UPLOAD_DIR = Path(os.environ.get("HEARTBEAT_UPLOAD_DIR", "data/uploads"))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 async def push_message(chat_id: str, text: str) -> None:
@@ -53,12 +56,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
   await update.message.reply_text(final_text)
 
 
+async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+  if not update.message or not update.message.document:
+    return
+
+  doc = update.message.document
+  file = await context.bot.get_file(doc.file_id)
+  dest = UPLOAD_DIR / doc.file_name
+  await file.download_to_drive(str(dest))
+
+  user_id = str(update.effective_user.id)
+  session_id = f"user-{user_id}"
+  caption = update.message.caption or ""
+  message = f"{caption}\n(방금 업로드된 파일: {dest})".strip()
+  final_text = await run_agent_chat(user_id, session_id, message, channel="telegram")
+  await update.message.reply_text(final_text)
+
+
 async def run_gateway(token: str, *, heartbeat_user_id: str | None = None) -> None:
   """Telegram polling + (선택) heartbeat를 같은 프로세스에서 실행."""
   global _bot_app
 
   app = Application.builder().token(token).build()
   app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+  app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
   _bot_app = app
 
   async with app:

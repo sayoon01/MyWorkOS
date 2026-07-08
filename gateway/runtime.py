@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -53,21 +54,23 @@ async def run_agent_chat(
 
   content = types.Content(role="user", parts=[types.Part(text=message)])
   final_text = ""
+  start = time.monotonic()
   async for event in runner.run_async(
       user_id=user_id,
       session_id=session_id,
       new_message=content,
   ):
+    elapsed = time.monotonic() - start
     if agent_debug_enabled():
       author = getattr(event, "author", None)
       if author:
-        debug_log(f"[agent] {author}")
+        debug_log(f"[agent] {author}  (+{elapsed:.1f}s)")
       if event.actions and event.actions.transfer_to_agent:
-        debug_log(f"[transfer] → {event.actions.transfer_to_agent}")
+        debug_log(f"[transfer] → {event.actions.transfer_to_agent}  (+{elapsed:.1f}s)")
       for fc in event.get_function_calls() or []:
-        debug_log(f"[tool] {fc.name}({fc.args})")
+        debug_log(f"[tool] {fc.name}({fc.args})  (+{elapsed:.1f}s)")
       if event.is_final_response():
-        debug_log("[final] 응답 확정")
+        debug_log(f"[final] 응답 확정  (+{elapsed:.1f}s)")
     if event.is_final_response() and event.content and event.content.parts:
       final_text = event.content.parts[0].text or ""
 
